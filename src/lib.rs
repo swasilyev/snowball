@@ -1,5 +1,6 @@
 mod affine_gen;
 mod apk_circuits;
+mod sum_acc;
 
 #[cfg(test)]
 mod tests {
