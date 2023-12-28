@@ -97,3 +97,46 @@ impl<P, F, CF> NonZeroAffineVarGeneric<P, F, CF>
         Ok(Self::new(x3, y3))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use ark_ec::CurveGroup;
+    use ark_r1cs_std::fields::fp::FpVar;
+    use ark_r1cs_std::fields::nonnative::NonNativeFieldVar;
+    use ark_relations::r1cs::ConstraintSystem;
+    use ark_std::{test_rng, UniformRand};
+    use crate::tests::Tracker;
+    use super::*;
+
+    #[test]
+    fn test_foreign() {
+        let rng = &mut test_rng();
+        let cs = ConstraintSystem::<ark_bls12_381::Fr>::new_ref();
+        let mut tracker = Tracker::new(&cs);
+        let p1 = ark_bls12_381::G1Affine::rand(rng);
+        let p2 = ark_bls12_381::G1Affine::rand(rng);
+        let p1_var = NonZeroAffineVarGeneric::<_, NonNativeFieldVar<ark_bls12_381::Fq, ark_bls12_381::Fr>, _>::new_witness(ark_relations::ns!(cs, "p1"), || Ok(&p1)).unwrap();
+        let p2_var = NonZeroAffineVarGeneric::<_, NonNativeFieldVar<ark_bls12_381::Fq, ark_bls12_381::Fr>, _>::new_witness(ark_relations::ns!(cs, "p2"), || Ok(&p2)).unwrap();
+        println!("allocating 2 points: {:?}", tracker.update(&cs));
+        let sum_var = p1_var.add_unchecked(&p2_var).unwrap();
+        println!("unchecked addition: {:?}", tracker.update(&cs));
+        assert_eq!(sum_var.value().unwrap(), (p1 + p2).into_affine());
+        assert!(cs.is_satisfied().unwrap());
+    }
+
+    #[test]
+    fn test_native() {
+        let rng = &mut test_rng();
+        let cs = ConstraintSystem::<ark_bw6_761::Fr>::new_ref();
+        let mut tracker = Tracker::new(&cs);
+        let p1 = ark_bls12_377::G1Affine::rand(rng);
+        let p2 = ark_bls12_377::G1Affine::rand(rng);
+        let p1_var = NonZeroAffineVarGeneric::<_, FpVar<ark_bw6_761::Fr>, _>::new_witness(ark_relations::ns!(cs, "p1"), || Ok(&p1)).unwrap();
+        let p2_var = NonZeroAffineVarGeneric::<_, FpVar<ark_bw6_761::Fr>, _>::new_witness(ark_relations::ns!(cs, "p2"), || Ok(&p2)).unwrap();
+        println!("allocating 2 points: {:?}", tracker.update(&cs));
+        let sum_var = p1_var.add_unchecked(&p2_var).unwrap();
+        println!("unchecked addition: {:?}", tracker.update(&cs));
+        assert_eq!(sum_var.value().unwrap(), (p1 + p2).into_affine());
+        assert!(cs.is_satisfied().unwrap());
+    }
+}
