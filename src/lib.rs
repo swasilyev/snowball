@@ -5,8 +5,11 @@ mod sum_acc;
 #[cfg(test)]
 mod tests {
     use ark_ff::Field;
+    use ark_r1cs_std::fields::nonnative::NonNativeFieldVar;
     use ark_relations::r1cs::ConstraintSystemRef;
     use derivative::Derivative;
+
+    pub type BlsInBls = NonNativeFieldVar<ark_bls12_381::Fq, ark_bls12_381::Fr>;
 
     #[derive(Derivative)]
     #[derivative(Debug, Clone)]
